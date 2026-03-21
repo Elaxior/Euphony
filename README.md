@@ -1,47 +1,152 @@
-# Euphony
+# 🎧 Euphony
 
-Euphony is an Android music experience built with Jetpack Compose and Kotlin. It integrates streaming, curated recommendations, and offline playback while coordinating with a playback service to handle background audio, looping, and shuffle behavior.
+Euphony is a modern Android music streaming experience built with **Kotlin** and **Jetpack Compose**. It combines online streaming, smart recommendations, and offline playback into a smooth, responsive app powered by a background playback service.
 
-## Getting Started
+---
 
-### Requirements
-- Android Studio Flamingo+ or higher (for Kotlin/Compose tooling)
-- Java 17
-- Android SDK 34 in `local.properties`
-- Device/emulator running API 24+ (Android 7.0) – compatibility extends through Android 16 via the fixes in `app/src/main`
+## ✨ Features
 
-### Setup
-1. Clone the repo and open it in Android Studio.
-2. Let Gradle sync to download dependencies from Google, Maven Central, and JitPack.
-3. Configure `local.properties` if not already set (e.g., `sdk.dir=...`).
+* 🎵 **Seamless Playback**
 
-### Running
+  * Background playback via `PlaybackService`
+  * Queue management with shuffle & loop
+  * Mini player + full player UI
+
+* 📚 **Library System**
+
+  * Favorites and playlists
+  * Queue isolation per collection
+  * Clean repository-based architecture
+
+* 📥 **Offline Mode**
+
+  * Download songs for offline listening
+  * Progress tracking
+  * Local playback with full controls
+
+* 🔍 **Smart Recommendations**
+
+  * “Recommended for You”
+  * “Trending Mix”
+  * Powered by NewPipe data + custom filtering
+
+* ⚙️ **Optimized Performance**
+
+  * Stable playback service lifecycle
+  * Improved reliability across Android versions
+  * Efficient state handling using Kotlin Flow
+
+---
+
+## 🏗️ Tech Stack
+
+* **Language:** Kotlin
+* **UI:** Jetpack Compose (Material 3)
+* **Architecture:** Clean Architecture + MVVM
+* **DI:** Custom AppContainer (manual DI)
+* **Async:** Coroutines + Flow
+* **Media:** ExoPlayer
+* **Background Work:** Services + WorkManager
+* **Storage:** Room / local persistence
+* **Streaming Source:** NewPipe Extractor
+
+---
+
+## 📁 Project Structure
+
+```
+com.example.euphony
+│
+├── data/              # Repositories, remote + local sources
+├── domain/            # Models (QueueState, etc.)
+├── ui/                # Compose screens & components
+├── playback/          # Player + PlaybackService
+├── di/                # Dependency container (AppContainer)
+```
+
+---
+
+## 🚀 Getting Started
+
+### ✅ Requirements
+
+* Android Studio Flamingo or newer
+* Java 17
+* Android SDK 34
+* Device/emulator with API 24+
+
+---
+
+### ⚙️ Setup
+
+```bash
+git clone https://github.com/your-username/euphony.git
+cd euphony
+```
+
+1. Open in Android Studio
+2. Let Gradle sync
+3. Ensure `local.properties` contains:
+
+```
+sdk.dir=YOUR_ANDROID_SDK_PATH
+```
+
+---
+
+### ▶️ Run the App
+
 ```bash
 ./gradlew clean assembleDebug
 ```
-Use the usual Run command from Android Studio once the project build succeeds.
 
-## Features
-- **Playback service** with `PlaybackService`, mini player, queue handling, and improved loop/shuffle controls.
-- **Library** enabling favorites and playlists backed by the `LibraryRepository` use cases, with queue isolation per collection.
-- **Offline mode** for downloading songs, tracking progress, and playing locally cached tracks with shuffle/loop support.
-- **Recommendations** ("Recommended for You" and "Trending Mix") leveraging NewPipe data plus app-specific filtering for better results.
-- **Android 16 optimizations** addressing playback reliability, loop behavior, and service lifecycle stability on API level 16 devices.
+Or simply click **Run ▶️** in Android Studio.
 
-## Architecture Notes
-- Dependency injection is handled in `com.example.euphony.di.AppContainer`. `LibraryViewModel` and playback repositories are provided there.
-- Playback queues live in `com.example.euphony.domain.model.QueueState` and are exposed through the player and queue repositories consumed in Compose screens.
-- Downloads use `com.example.euphony.data.remote.DownloaderImpl` via NewPipe to fetch audio; offline playback relies on persisted metadata accessible to the player.
+---
 
-## Libraries & Tools
-- Jetpack Compose (Material 3 + Navigation)
-- Kotlin coroutines + Flow for state updates
-- NewPipe extractor for fetching online audio items
-- WorkManager/Service for downloads and background playback
+## 🧠 Architecture Notes
 
-## Next Steps
-1. Add instrumentation/unit tests to validate playback queuing and offline flows.
-2. Expand recommendation filtering logic in `app` modules (see placeholder `RECOMMENDATIONS_IMPROVEMENTS.md` if restored).
-3. Tune download caching/performance for large libraries.
+* **Dependency Injection**
 
-Feel free to extend the README further with specific screen walkthroughs or API notes once additional features land.
+  * Managed via `AppContainer`
+  * Provides ViewModels and repositories
+
+* **Playback System**
+
+  * Queue handled via `QueueState`
+  * Shared across UI and service layers
+
+* **Offline System**
+
+  * Downloads via `DownloaderImpl`
+  * Metadata persisted for playback
+
+---
+
+## 🛠️ Key Components
+
+* `PlaybackService` → Core audio engine
+* `LibraryRepository` → Manages playlists & favorites
+* `QueueState` → Central playback queue logic
+* `DownloaderImpl` → Handles audio fetching
+
+---
+
+## 🔮 Future Improvements
+
+* ✅ Add unit & instrumentation tests
+* 🎯 Improve recommendation algorithm
+* ⚡ Optimize download performance & caching
+* 🎨 Enhance UI animations & polish
+
+---
+
+## ⚠️ Disclaimer
+
+This project uses the **NewPipe Extractor** to fetch publicly available media streams.
+
+* This app is **for educational purposes only**
+* It does **not host or own any content**
+* Users are responsible for complying with YouTube’s Terms of Service
+
+---
