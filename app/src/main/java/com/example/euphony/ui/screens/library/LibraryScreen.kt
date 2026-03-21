@@ -1,0 +1,511 @@
+package com.example.euphony.ui.screens.library
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.euphony.di.AppContainer
+import com.example.euphony.domain.model.Playlist
+import com.example.euphony.domain.model.Song
+import com.example.euphony.ui.screens.downloads.DownloadsScreen
+
+@Composable
+fun LibraryScreen(
+    onNavigateToPlayer: () -> Unit = {}
+) {
+    val viewModel = remember {
+        LibraryViewModel(
+            getFavoritesUseCase = AppContainer.provideGetFavoritesUseCase(),
+            getAllPlaylistsUseCase = AppContainer.provideGetAllPlaylistsUseCase(),
+            toggleFavoriteUseCase = AppContainer.provideToggleFavoriteUseCase(),
+            createPlaylistUseCase = AppContainer.provideCreatePlaylistUseCase(),
+            addSongToPlaylistUseCase = AppContainer.provideAddSongToPlaylistUseCase(),
+            playSongUseCase = AppContainer.providePlaySongUseCase(),
+            queueRepository = AppContainer.provideFakeQueueRepository(),
+            deletePlaylistUseCase = AppContainer.provideDeletePlaylistUseCase(),
+            renamePlaylistUseCase = AppContainer.provideRenamePlaylistUseCase(),
+            removeSongFromPlaylistUseCase = AppContainer.provideRemoveSongFromPlaylistUseCase()
+        )
+    }
+
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Playlist Detail Screen
+    if (uiState.showPlaylistDetail && uiState.selectedPlaylist != null) {
+        PlaylistDetailScreen(
+            playlist = uiState.selectedPlaylist!!,
+            onBack = { viewModel.hidePlaylistDetail() },
+            onPlaySong = { song ->
+                viewModel.playSong(song)
+                onNavigateToPlayer()
+            },
+            onPlayAll = {
+                viewModel.playPlaylist(uiState.selectedPlaylist!!, startIndex = 0)
+                onNavigateToPlayer()
+            },
+            onShuffle = {
+                viewModel.playPlaylist(uiState.selectedPlaylist!!, shuffle = true)
+                onNavigateToPlayer()
+            },
+            onRemoveSong = { song ->
+                viewModel.removeSongFromPlaylist(
+                    uiState.selectedPlaylist!!.id.toLong(),
+                    song.videoId
+                )
+            },
+            onRename = { viewModel.showRenameDialog(uiState.selectedPlaylist!!) },
+            onDelete = { viewModel.showDeleteConfirmDialog(uiState.selectedPlaylist!!) }
+        )
+        return
+    }
+
+    // Create Playlist Dialog
+    if (uiState.showCreatePlaylistDialog) {
+        CreatePlaylistDialog(
+            onDismiss = { viewModel.hideCreatePlaylistDialog() },
+            onConfirm = { name -> viewModel.createPlaylist(name) }
+        )
+    }
+
+    // Rename Playlist Dialog
+    if (uiState.showRenamePlaylistDialog && uiState.playlistToRename != null) {
+        RenamePlaylistDialog(
+            currentName = uiState.playlistToRename!!.name,
+            onDismiss = { viewModel.hideRenameDialog() },
+            onConfirm = { newName ->
+                viewModel.renamePlaylist(uiState.playlistToRename!!.id.toLong(), newName)
+            }
+        )
+    }
+
+    // Delete Confirmation Dialog
+    if (uiState.showDeleteConfirmDialog && uiState.playlistToDelete != null) {
+        DeletePlaylistDialog(
+            playlistName = uiState.playlistToDelete!!.name,
+            onDismiss = { viewModel.hideDeleteConfirmDialog() },
+            onConfirm = {
+                viewModel.deletePlaylist(uiState.playlistToDelete!!.id.toLong())
+            }
+        )
+    }
+
+    // Add to Playlist Dialog
+    if (uiState.showAddToPlaylistDialog && uiState.selectedSongForPlaylist != null) {
+        AddToPlaylistDialog(
+            playlists = uiState.playlists,
+            onDismiss = { viewModel.hideAddToPlaylistDialog() },
+            onPlaylistSelected = { playlistId ->
+                viewModel.addSongToPlaylist(playlistId, uiState.selectedSongForPlaylist!!)
+            }
+        )
+    }
+
+    // Song Options Dialog
+    if (uiState.showSongOptionsDialog && uiState.selectedSongForOptions != null) {
+        SongOptionsDialog(
+            song = uiState.selectedSongForOptions!!,
+            onDismiss = { viewModel.hideSongOptionsDialog() },
+            onAddToPlaylist = { song ->
+                viewModel.hideSongOptionsDialog()
+                viewModel.showAddToPlaylistDialog(song)
+            },
+            onRemoveFromFavorites = { song ->
+                viewModel.toggleFavorite(song)
+                viewModel.hideSongOptionsDialog()
+            }
+        )
+    }
+
+    // Success/Error Snackbar
+    uiState.error?.let { error ->
+        LaunchedEffect(error) {
+            kotlinx.coroutines.delay(3000)
+            viewModel.clearError()
+        }
+    }
+
+    uiState.successMessage?.let { message ->
+        LaunchedEffect(message) {
+            kotlinx.coroutines.delay(2000)
+            viewModel.clearSuccessMessage()
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (uiState.isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center)
+            )
+        } else {
+            LibraryContent(
+                uiState = uiState,
+                onCreatePlaylist = { viewModel.showCreatePlaylistDialog() },
+                onSongClick = { song ->
+                    viewModel.playSong(song)
+                    onNavigateToPlayer()
+                },
+                onSongLongClick = { song ->
+                    viewModel.showSongOptionsDialog(song)
+                },
+                onPlaylistClick = { playlist ->
+                    viewModel.showPlaylistDetail(playlist)
+                },
+                onPlayFavorites = {
+                    viewModel.playFavorites()
+                    onNavigateToPlayer()
+                },
+                onShuffleFavorites = {
+                    viewModel.shuffleFavorites()
+                    onNavigateToPlayer()
+                },
+                onNavigateToPlayer = onNavigateToPlayer
+            )
+        }
+
+        // Snackbar for messages
+        uiState.error?.let { error ->
+            Snackbar(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.errorContainer
+            ) {
+                Text(error)
+            }
+        }
+
+        uiState.successMessage?.let { message ->
+            Snackbar(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Text(message)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LibraryContent(
+    uiState: LibraryUiState,
+    onCreatePlaylist: () -> Unit,
+    onSongClick: (Song) -> Unit,
+    onSongLongClick: (Song) -> Unit,
+    onPlaylistClick: (Playlist) -> Unit,
+    onPlayFavorites: () -> Unit,
+    onShuffleFavorites: () -> Unit,
+    onNavigateToPlayer: () -> Unit
+) {
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    val tabs = listOf("Favorites", "Playlists", "Downloads")
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Header
+        Text(
+            text = "Your Library",
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontWeight = FontWeight.Bold
+            ),
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
+        )
+
+        // Tab Row
+        TabRow(
+            selectedTabIndex = selectedTabIndex,
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTabIndex == index,
+                    onClick = { selectedTabIndex = index },
+                    text = {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Content
+        when (selectedTabIndex) {
+            0 -> FavoritesTab(
+                favorites = uiState.favorites,
+                onSongClick = onSongClick,
+                onSongLongClick = onSongLongClick,
+                onPlayAll = onPlayFavorites,
+                onShuffle = onShuffleFavorites
+            )
+            1 -> PlaylistsTab(
+                playlists = uiState.playlists,
+                onCreatePlaylist = onCreatePlaylist,
+                onPlaylistClick = onPlaylistClick
+            )
+            2 -> DownloadsScreen(
+                onNavigateToPlayer = onNavigateToPlayer
+            )
+        }
+    }
+}
+
+@Composable
+private fun FavoritesTab(
+    favorites: List<Song>,
+    onSongClick: (Song) -> Unit,
+    onSongLongClick: (Song) -> Unit,
+    onPlayAll: () -> Unit,
+    onShuffle: () -> Unit
+) {
+    if (favorites.isEmpty()) {
+        EmptyState(
+            icon = Icons.Default.Favorite,
+            message = "No favorites yet",
+            subtitle = "Tap the heart icon on any song to add it here"
+        )
+    } else {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Play controls
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    onClick = onPlayAll,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = "Play All")
+                    Spacer(Modifier.width(8.dp))
+                    Text("Play All")
+                }
+
+                OutlinedButton(
+                    onClick = onShuffle,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Shuffle, contentDescription = "Shuffle")
+                    Spacer(Modifier.width(8.dp))
+                    Text("Shuffle")
+                }
+            }
+
+            // Songs list
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(favorites, key = { it.videoId }) { song ->
+                    LibrarySongCard(
+                        song = song,
+                        onClick = { onSongClick(song) },
+                        onLongClick = { onSongLongClick(song) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlaylistsTab(
+    playlists: List<Playlist>,
+    onCreatePlaylist: () -> Unit,
+    onPlaylistClick: (Playlist) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Create Button
+        Button(
+            onClick = onCreatePlaylist,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Icon(imageVector = Icons.Default.Add, contentDescription = "Create")
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Create New Playlist")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (playlists.isEmpty()) {
+            EmptyState(
+                icon = Icons.Default.MusicNote,
+                message = "No playlists yet",
+                subtitle = "Create your first playlist to get started"
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(playlists, key = { it.id }) { playlist ->
+                    PlaylistCard(
+                        playlist = playlist,
+                        onClick = { onPlaylistClick(playlist) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyState(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    message: String,
+    subtitle: String
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = message,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+    }
+}
+
+// ==================== INLINE DIALOGS ====================
+
+@Composable
+private fun CreatePlaylistDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var playlistName by remember { mutableStateOf("") }
+    var showError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Create Playlist", style = MaterialTheme.typography.titleLarge) },
+        text = {
+            OutlinedTextField(
+                value = playlistName,
+                onValueChange = {
+                    playlistName = it
+                    showError = false
+                },
+                label = { Text("Playlist Name") },
+                singleLine = true,
+                isError = showError,
+                supportingText = if (showError) {
+                    { Text("Playlist name cannot be empty") }
+                } else null,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (playlistName.isBlank()) {
+                        showError = true
+                    } else {
+                        onConfirm(playlistName.trim())
+                    }
+                }
+            ) { Text("Create") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+private fun AddToPlaylistDialog(
+    playlists: List<Playlist>,
+    onDismiss: () -> Unit,
+    onPlaylistSelected: (Long) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add to Playlist", style = MaterialTheme.typography.titleLarge) },
+        text = {
+            if (playlists.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No playlists available.\nCreate one first!",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(playlists, key = { it.id }) { playlist ->
+                        PlaylistCard(
+                            playlist = playlist,
+                            onClick = {
+                                onPlaylistSelected(playlist.id.toLong())
+                                onDismiss()
+                            }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
