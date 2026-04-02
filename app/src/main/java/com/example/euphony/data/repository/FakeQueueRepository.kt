@@ -48,16 +48,18 @@ class FakeQueueRepository(
             playerRepository.isPlaying,
             playerRepository.isLoading,
             playerRepository.error,
-            _queue
-        ) { currentSong, isPlaying, isLoading, error, queue ->
+            _queue,
+            _currentIndex,
+            _playbackMode
+        ) { currentSong, isPlaying, isLoading, error, queue, currentIndex, playbackMode ->
             QueueState(
                 currentSong = currentSong,
                 queue = queue,
-                currentIndex = _currentIndex.value,
+                currentIndex = currentIndex,
                 isPlaying = isPlaying,
                 isLoading = isLoading,
                 error = error,
-                playbackMode = _playbackMode.value
+                playbackMode = playbackMode
             )
         }
     }
@@ -65,6 +67,7 @@ class FakeQueueRepository(
     override suspend fun addToQueue(song: Song) {
         val currentQueue = _queue.value
         _queue.value = currentQueue + song
+        _originalQueue.value = _originalQueue.value + song
     }
 
     override suspend fun playSong(song: Song) {
@@ -151,7 +154,25 @@ class FakeQueueRepository(
     }
 
     override suspend fun addRelatedSongs(baseSong: Song) {
-        relatedSongsFetcher.getRelatedSongs(baseSong.videoId, limit = 80)
+        val recentSeeds = _queue.value
+            .take((_currentIndex.value + 1).coerceAtLeast(1))
+            .takeLast(3)
+            .map { it.videoId }
+            .filter { it.isNotBlank() }
+            .ifEmpty { listOf(baseSong.videoId) }
+            .distinct()
+
+        val relatedCandidates = mutableListOf<Song>()
+        for (seed in recentSeeds) {
+            relatedSongsFetcher.getRelatedSongs(seed, limit = 40)
+                .onSuccess { songs -> relatedCandidates.addAll(songs) }
+        }
+
+        Result.success(
+            relatedCandidates
+                .distinctBy { it.videoId }
+                .take(120)
+        )
             .onSuccess { relatedSongs ->
                 if (relatedSongs.isNotEmpty()) {
                     val currentQueue = _queue.value

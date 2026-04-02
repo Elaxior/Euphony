@@ -325,7 +325,8 @@ object AppContainer {
             provideAddSearchToHistoryUseCase(),
             provideGetRecentSearchesUseCase(),
             provideClearSearchHistoryUseCase(),
-            provideDeleteSearchHistoryItemUseCase()
+            provideDeleteSearchHistoryItemUseCase(),
+            queueRepository
         )
     }
 

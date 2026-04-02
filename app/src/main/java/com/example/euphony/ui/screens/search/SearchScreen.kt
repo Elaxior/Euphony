@@ -117,6 +117,7 @@ fun SearchScreen(
                     // Show search results
                     SearchResults(
                         results = uiState.searchResults,
+                        onAddToQueue = { song -> viewModel.addToQueue(song) },
                         onSongClick = onSongClick
                     )
                 }
@@ -244,6 +245,7 @@ private fun RecentSearchesSection(
 @Composable
 private fun SearchResults(
     results: List<Song>,
+    onAddToQueue: (Song) -> Unit,
     onSongClick: (Song) -> Unit
 ) {
     LazyColumn(
@@ -254,6 +256,7 @@ private fun SearchResults(
             SearchResultCard(
                 song = song,
                 onClick = { onSongClick(song) },
+                onMoreClick = { onAddToQueue(song) },
                 modifier = Modifier.padding(bottom = 12.dp)
             )
         }
