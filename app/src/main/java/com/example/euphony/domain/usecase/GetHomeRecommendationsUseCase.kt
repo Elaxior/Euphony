@@ -115,18 +115,12 @@ class GetHomeRecommendationsUseCase(
                 .sortedByDescending { it.value }
                 .take(3)
                 .map { it.key }
-            val recentTitles = history.take(5).map { "${it.artist} ${it.title}" }
 
             val recommendations = mutableListOf<Song>()
 
             val artistSongs = topArtists.map { artist ->
                 async {
-                    trendingMusicFetcher.fetchMusicByCategory("$artist mix", 6)
-                        .getOrElse { emptyList() }
-                }
-            } + recentTitles.map { seed ->
-                async {
-                    trendingMusicFetcher.fetchMusicByCategory(seed, 4)
+                    trendingMusicFetcher.fetchMusicByCategory(artist, 5)
                         .getOrElse { emptyList() }
                 }
             }.map { it.await() }
@@ -139,7 +133,7 @@ class GetHomeRecommendationsUseCase(
             recommendations
                 .filter { it.videoId !in historyIds }
                 .distinctBy { it.videoId }
-                .take(20)
+                .take(15)
 
         } catch (e: Exception) {
             Log.e("GetHomeRecs", "Error generating recommendations", e)
@@ -148,7 +142,7 @@ class GetHomeRecommendationsUseCase(
     }
 
     private suspend fun fetchPopularMusic(): List<Song> = coroutineScope {
-        val categories = listOf("pop hits", "trending music", "top songs", "viral songs", "new music friday")
+        val categories = listOf("pop hits", "trending music", "top songs")
         val recommendations = mutableListOf<Song>()
 
         val categorySongs = categories.map { category ->

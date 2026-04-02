@@ -15,14 +15,8 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,8 +39,6 @@ fun SearchResultCard(
     onMoreClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var showMenu by remember { mutableStateOf(false) }
-
     GlassCard(
         modifier = modifier
             .fillMaxWidth()
@@ -117,7 +109,7 @@ fun SearchResultCard(
 
             // More options button
             IconButton(
-                onClick = { showMenu = true },
+                onClick = onMoreClick,
                 modifier = Modifier.size(40.dp)
             ) {
                 Icon(
@@ -125,19 +117,6 @@ fun SearchResultCard(
                     contentDescription = "More options",
                     tint = Color(0xFFB3B3B3),
                     modifier = Modifier.size(20.dp)
-                )
-            }
-
-            DropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = { showMenu = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Add to queue") },
-                    onClick = {
-                        showMenu = false
-                        onMoreClick()
-                    }
                 )
             }
         }
