@@ -3,6 +3,7 @@ package com.example.euphony.ui.screens.search
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.euphony.domain.repository.QueueRepository
 import com.example.euphony.domain.model.Song
 import com.example.euphony.domain.usecase.AddSearchToHistoryUseCase
 import com.example.euphony.domain.usecase.ClearSearchHistoryUseCase
@@ -35,7 +36,8 @@ class SearchViewModel(
     private val addSearchToHistoryUseCase: AddSearchToHistoryUseCase,
     private val getRecentSearchesUseCase: GetRecentSearchesUseCase,
     private val clearSearchHistoryUseCase: ClearSearchHistoryUseCase,
-    private val deleteSearchHistoryItemUseCase: DeleteSearchHistoryItemUseCase
+    private val deleteSearchHistoryItemUseCase: DeleteSearchHistoryItemUseCase,
+    private val queueRepository: QueueRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())
@@ -258,6 +260,16 @@ class SearchViewModel(
         val currentQuery = _uiState.value.query
         if (currentQuery.isNotBlank()) {
             performSearch(currentQuery, saveToHistory = true)
+        }
+    }
+
+    fun addToQueue(song: Song) {
+        viewModelScope.launch {
+            runCatching {
+                queueRepository.addToQueue(song)
+            }.onFailure { exception ->
+                Log.e(TAG, "Failed to add song to queue", exception)
+            }
         }
     }
 }

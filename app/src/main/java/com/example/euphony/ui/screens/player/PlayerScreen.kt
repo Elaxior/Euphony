@@ -2,6 +2,7 @@ package com.example.euphony.ui.screens.player
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -125,7 +126,9 @@ fun PlayerScreen(
             onFavoriteClick = { viewModel.toggleFavorite() },
             onDownloadClick = { viewModel.downloadSong() }, // NEW
             onAddToPlaylistClick = { viewModel.showAddToPlaylistDialog() },
-            onRetryClick = { viewModel.retrySong() } // Add retry
+            onRetryClick = { viewModel.retrySong() }, // Add retry
+            onSwipeNext = { viewModel.playNext() },
+            onSwipePrevious = { viewModel.playPrevious() }
         )
     } else {
         EmptyPlayerState(onNavigateBack)
@@ -159,7 +162,9 @@ private fun FullscreenPlayerWithQueue(
     onFavoriteClick: () -> Unit, // NEW
     onDownloadClick: () -> Unit, // NEW: Download action
     onAddToPlaylistClick: () -> Unit, // NEW
-    onRetryClick: () -> Unit // Add retry
+    onRetryClick: () -> Unit, // Add retry
+    onSwipeNext: () -> Unit,
+    onSwipePrevious: () -> Unit
 ) {
     var showQueue by remember { mutableStateOf(false) }
 
@@ -188,7 +193,9 @@ private fun FullscreenPlayerWithQueue(
             onFavoriteClick = onFavoriteClick, // NEW
             onDownloadClick = onDownloadClick, // NEW
             onAddToPlaylistClick = onAddToPlaylistClick, // NEW
-            onRetryClick = onRetryClick // Pass retry
+            onRetryClick = onRetryClick, // Pass retry
+            onSwipeNext = onSwipeNext,
+            onSwipePrevious = onSwipePrevious
         )
 
         // Queue bottom sheet
@@ -227,7 +234,9 @@ private fun FullscreenPlayer(
     onFavoriteClick: () -> Unit, // NEW
     onDownloadClick: () -> Unit, // NEW: Download action
     onAddToPlaylistClick: () -> Unit, // NEW
-    onRetryClick: () -> Unit // Add retry
+    onRetryClick: () -> Unit, // Add retry
+    onSwipeNext: () -> Unit,
+    onSwipePrevious: () -> Unit
 ) {
     val playerRepository = remember { AppContainer.providePlayerRepository() }
     val currentPosition by playerRepository.currentPosition.collectAsState()
@@ -235,6 +244,7 @@ private fun FullscreenPlayer(
 
     var sliderPosition by remember { mutableFloatStateOf(0f) }
     var isUserSeeking by remember { mutableStateOf(false) }
+    var showLyricsPanel by remember { mutableStateOf(false) }
 
     LaunchedEffect(currentPosition) {
         if (!isUserSeeking && duration > 0) {
@@ -318,7 +328,21 @@ private fun FullscreenPlayer(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .weight(1f)
+                    .pointerInput(song.videoId) {
+                        var totalDrag = 0f
+                        detectHorizontalDragGestures(
+                            onDragEnd = {
+                                when {
+                                    totalDrag <= -120f && canPlayNext -> onSwipeNext()
+                                    totalDrag >= 120f && canPlayPrevious -> onSwipePrevious()
+                                }
+                                totalDrag = 0f
+                            }
+                        ) { _, dragAmount ->
+                            totalDrag += dragAmount
+                        }
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
@@ -417,6 +441,16 @@ private fun FullscreenPlayer(
                             contentDescription = "Add to playlist",
                             tint = Color.White,
                             modifier = Modifier.size(26.dp)
+                        )
+                    }
+
+                    // Lyrics panel toggle
+                    IconButton(onClick = { showLyricsPanel = !showLyricsPanel }) {
+                        Icon(
+                            imageVector = Icons.Default.MusicNote,
+                            contentDescription = "Lyrics",
+                            tint = if (showLyricsPanel) MaterialTheme.colorScheme.primary else Color.White,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -611,6 +645,31 @@ private fun FullscreenPlayer(
                                 fontWeight = FontWeight.Bold
                             )
                         }
+                    }
+                }
+            }
+
+            if (showLyricsPanel) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White.copy(alpha = 0.08f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "Lyrics · ${song.title}",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Lyrics are not available yet for this track.\nWe'll show synced lyrics here in a future update.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFFCCCCCC)
+                        )
                     }
                 }
             }

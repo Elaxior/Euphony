@@ -2,6 +2,7 @@ package com.example.euphony.ui.screens.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.euphony.domain.repository.QueueRepository
 import com.example.euphony.domain.usecase.AddSearchToHistoryUseCase
 import com.example.euphony.domain.usecase.ClearSearchHistoryUseCase
 import com.example.euphony.domain.usecase.DeleteSearchHistoryItemUseCase
@@ -13,7 +14,8 @@ class SearchViewModelFactory(
     private val addSearchToHistoryUseCase: AddSearchToHistoryUseCase,
     private val getRecentSearchesUseCase: GetRecentSearchesUseCase,
     private val clearSearchHistoryUseCase: ClearSearchHistoryUseCase,
-    private val deleteSearchHistoryItemUseCase: DeleteSearchHistoryItemUseCase
+    private val deleteSearchHistoryItemUseCase: DeleteSearchHistoryItemUseCase,
+    private val queueRepository: QueueRepository
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
@@ -24,7 +26,8 @@ class SearchViewModelFactory(
                 addSearchToHistoryUseCase,
                 getRecentSearchesUseCase,
                 clearSearchHistoryUseCase,
-                deleteSearchHistoryItemUseCase
+                deleteSearchHistoryItemUseCase,
+                queueRepository
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
