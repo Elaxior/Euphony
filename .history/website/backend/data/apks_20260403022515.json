@@ -1,0 +1,22 @@
+[
+  {
+    "id": "apk-120",
+    "version": "v1.2.0",
+    "build": "stable",
+    "changelog": "Introduced modern player redesign, improved queue actions, and optimized search performance.",
+    "fileName": "euphony-v1.2.0.apk",
+    "fileSize": 19554234,
+    "downloadUrl": "#",
+    "releasedAt": "2026-04-02T08:00:00.000Z"
+  },
+  {
+    "id": "apk-111",
+    "version": "v1.1.1",
+    "build": "stable",
+    "changelog": "Fixed playback resume behavior and added retry handling for streaming errors.",
+    "fileName": "euphony-v1.1.1.apk",
+    "fileSize": 18943321,
+    "downloadUrl": "#",
+    "releasedAt": "2026-03-18T10:30:00.000Z"
+  }
+]

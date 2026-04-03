@@ -1,0 +1,26 @@
+[
+  {
+    "id": "r-101",
+    "name": "Aarav N.",
+    "title": "Best UI among indie players",
+    "rating": 5,
+    "comment": "Smooth playback, beautiful transitions, and queue controls feel premium.",
+    "createdAt": "2026-03-15T09:20:00.000Z"
+  },
+  {
+    "id": "r-102",
+    "name": "Maya S.",
+    "title": "Offline downloads are great",
+    "rating": 4,
+    "comment": "I use downloads daily while commuting. Search recommendations are super helpful.",
+    "createdAt": "2026-03-26T12:10:00.000Z"
+  },
+  {
+    "id": "r-103",
+    "name": "Dev P.",
+    "title": "Playlist management is clean",
+    "rating": 5,
+    "comment": "Creating playlists and adding tracks is quick. Love the mini player UX.",
+    "createdAt": "2026-04-01T16:35:00.000Z"
+  }
+]
